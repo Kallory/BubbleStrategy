@@ -111,7 +111,7 @@ func _input(event):
 				# else: do nothing if we clicked an empty square or enemy piece
 			else:
 				# 2) If a piece is already selected
-				if selected_piece == Vector2(var2, var1):
+				if selected_piece == Vector2(var2, var1) and (selected_piece == player1_base or selected_piece == player2_base):
 					# Same piece => "oxygen +1" + end turn
 					print("oxygen +1")
 					end_turn()
