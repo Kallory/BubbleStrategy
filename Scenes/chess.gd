@@ -1,15 +1,15 @@
 extends Sprite2D
 
-const BOARD_SIZE = 8
+const BOARD_SIZE = 9
 const CELL_WIDTH = 18
 
 const TEXTURE_HOLDER = preload("res://Scenes/texture_holder.tscn")
 
-const BLACK_KING = preload("res://Assets/black_king.png")
-const WHITE_KING = preload("res://Assets/white_king.png")
+const PLAYER2_BUBBLE = preload("res://Assets/player2_bubble.png")
+const PLAYER1_BUBBLE = preload("res://Assets/player1_bubble.png")
 
-const TURN_WHITE = preload("res://Assets/turn-white.png")
-const TURN_BLACK = preload("res://Assets/turn-black.png")
+const TURN_PLAYER1 = preload("res://Assets/turn-player1.png")
+const TURN_PLAYER2 = preload("res://Assets/turn-player2.png")
 
 const PIECE_MOVE = preload("res://Assets/Piece_move.png")
 const BUBBLE_MOVE_SOUND = preload("res://Assets/Bubble Move.wav")
@@ -18,36 +18,36 @@ const BUBBLE_MOVE_SOUND = preload("res://Assets/Bubble Move.wav")
 @onready var dots = $Dots
 @onready var turn = $Turn
 
-@onready var white_pieces = $"../CanvasLayer/white_pieces"
-@onready var black_pieces = $"../CanvasLayer/black_pieces"
+@onready var player1_pieces = $"../CanvasLayer/player1_pieces"
+@onready var player2_pieces = $"../CanvasLayer/player2_pieces"
 
 # Piece codes:
-# -6 = black king
-# -5 = black queen
-# -4 = black rook
-# -3 = black bishop
-# -2 = black knight
-# -1 = black pawn
+# -6 = player2 bubble
+# -5 = player2 queen
+# -4 = player2 rook
+# -3 = player2 bishop
+# -2 = player2 knight
+# -1 = player2 pawn
 #  0 = empty
-#  6 = white king
-#  5 = white queen
-#  4 = white rook
-#  3 = white bishop
-#  2 = white knight
-#  1 = white pawn
+#  6 = player1 bubble
+#  5 = player1 queen
+#  4 = player1 rook
+#  3 = player1 bishop
+#  2 = player1 knight
+#  1 = player1 pawn
 
 var board : Array = []
-var white : bool = true
+var player1 : bool = true
 
 # We'll just use a single variable to track if a piece is currently selected
 var is_selected = false
 var selected_piece : Vector2 = Vector2(-1, -1)
 var moves = []
 
-var white_king_pos = Vector2(0, 4)
-var black_king_pos = Vector2(7, 4)
-var white_base = Vector2(0, 7)
-var black_base = Vector2(7, 0)
+var player1_base_pos = Vector2(0, 8)
+var player2_bubble_pos = Vector2(8, 0)
+var player1_base = Vector2(0, 8)
+var player2_base = Vector2(8, 0)
 
 var bubble_move_player: AudioStreamPlayer
 
@@ -59,17 +59,17 @@ func _ready():
 			row_array.append(0)
 		board.append(row_array)
 
-	# Place kings
-	board[0][4] = 6
-	board[7][4] = -6
+	# Place bases, initial bubble
+	board[0][8] = 6
+	board[8][0] = -6
 	
 	display_board()
 	
-	var white_buttons = get_tree().get_nodes_in_group("white_pieces")
-	var black_buttons = get_tree().get_nodes_in_group("black_pieces")
-	for button in white_buttons:
+	var player1_buttons = get_tree().get_nodes_in_group("player1_pieces")
+	var player2_buttons = get_tree().get_nodes_in_group("player2_pieces")
+	for button in player1_buttons:
 		button.pressed.connect(self._on_button_pressed.bind(button))
-	for button in black_buttons:
+	for button in player2_buttons:
 		button.pressed.connect(self._on_button_pressed.bind(button))
 		
 	var music_player = AudioStreamPlayer.new()
@@ -104,7 +104,7 @@ func _input(event):
 			# 1) If nothing is selected:
 			if not is_selected:
 				# If it belongs to the current player
-				if (white and piece_code > 0) or (not white and piece_code < 0):
+				if (player1 and piece_code > 0) or (not player1 and piece_code < 0):
 					selected_piece = Vector2(var2, var1)
 					is_selected = true
 					show_options()
@@ -137,16 +137,16 @@ func display_board():
 			
 			match board[i][j]:
 				-6:
-					holder.texture = BLACK_KING
+					holder.texture = PLAYER2_BUBBLE
 				6:
-					holder.texture = WHITE_KING
+					holder.texture = PLAYER1_BUBBLE
 				_:
 					holder.texture = null
 	
-	if white:
-		turn.texture = TURN_WHITE
+	if player1:
+		turn.texture = TURN_PLAYER1
 	else:
-		turn.texture = TURN_BLACK
+		turn.texture = TURN_PLAYER2
 
 func show_options():
 	moves = get_moves(selected_piece)
@@ -181,11 +181,11 @@ func set_move(target_row, target_col):
 			board[target_row][target_col] = board[selected_piece.x][selected_piece.y]
 			board[selected_piece.x][selected_piece.y] = 0
 			
-			# If it's a king, record its position
+			# If it's a bubble, record its position
 			if board[target_row][target_col] == 6:
-				white_king_pos = Vector2(target_row, target_col)
+				player1_base_pos = Vector2(target_row, target_col)
 			elif board[target_row][target_col] == -6:
-				black_king_pos = Vector2(target_row, target_col)
+				player2_bubble_pos = Vector2(target_row, target_col)
 			
 			bubble_move_player.play()
 			break
@@ -209,27 +209,27 @@ func deselect():
 # UNIFY ALL "END OF TURN" LOGIC IN THIS SINGLE FUNCTION!
 # -------------------------------------------------------
 func end_turn():
-	white = not white
+	player1 = not player1
 	deselect()
 	# Optionally do a board redraw if you want immediate feedback
 	display_board()
-	# print("Turn ended. Now it is " + (white ? "White" : "Black") + "'s turn.")
+	# print("Turn ended. Now it is " + (player1 ? "White" : "Black") + "'s turn.")
 
 # -------------------------------------------------
-# Only call the king's movement logic in get_moves!
+# Only call the bubble's movement logic in get_moves!
 # -------------------------------------------------
 func get_moves(piece_position : Vector2):
 	var piece_value = board[piece_position.x][piece_position.y]
 	var _moves = []
 
 	if abs(piece_value) == 6:
-		_moves = get_king_moves(piece_position)
+		_moves = get_bubble_moves(piece_position)
 	else:
 		_moves = []
 	
 	return _moves
 
-func get_king_moves(piece_position : Vector2):
+func get_bubble_moves(piece_position : Vector2):
 	var _moves = []
 	var directions = [
 		Vector2(0, 1), Vector2(0, -1), Vector2(1, 0), Vector2(-1, 0),
@@ -250,9 +250,9 @@ func is_empty(pos : Vector2):
 	return board[pos.x][pos.y] == 0
 
 func is_enemy(pos : Vector2):
-	if white and board[pos.x][pos.y] < 0:
+	if player1 and board[pos.x][pos.y] < 0:
 		return true
-	elif not white and board[pos.x][pos.y] > 0:
+	elif not player1 and board[pos.x][pos.y] > 0:
 		return true
 	return false
 

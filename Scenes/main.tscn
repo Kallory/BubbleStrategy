@@ -1,4 +1,4 @@
-[gd_scene load_steps=36 format=3 uid="uid://wumwx2sgq27v"]
+[gd_scene load_steps=37 format=3 uid="uid://wumwx2sgq27v"]
 
 [ext_resource type="Texture2D" uid="uid://ctsgdmugmedg5" path="res://Assets/white_knight.png" id="1_3khqn"]
 [ext_resource type="PackedScene" uid="uid://c5xblqofcwad0" path="res://Scenes/board.tscn" id="1_63gbl"]
@@ -9,6 +9,7 @@
 [ext_resource type="Texture2D" uid="uid://bmmt31nb526bf" path="res://Assets/black_bishop.png" id="6_cavfs"]
 [ext_resource type="Texture2D" uid="uid://bhr8c2pb02smt" path="res://Assets/black_rook.png" id="7_wianj"]
 [ext_resource type="Texture2D" uid="uid://bs6nmydq4udho" path="res://Assets/black_queen.png" id="8_df1ci"]
+[ext_resource type="Texture2D" uid="uid://bhuscw05ikyv7" path="res://Assets/Chess_board2.png" id="10_rjbg7"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_vp5if"]
 
@@ -211,3 +212,6 @@ theme_override_styles/pressed = SubResource("StyleBoxTexture_etk7k")
 theme_override_styles/normal = SubResource("StyleBoxTexture_vgg4r")
 
 [node name="Board" parent="." instance=ExtResource("1_63gbl")]
+texture_filter = 1
+texture_repeat = 1
+texture = ExtResource("10_rjbg7")
