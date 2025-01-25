@@ -71,6 +71,14 @@ func _ready():
 		button.pressed.connect(self._on_button_pressed.bind(button))
 	for button in black_buttons:
 		button.pressed.connect(self._on_button_pressed.bind(button))
+		
+	var music_player = AudioStreamPlayer.new()
+	var music_stream = preload("res://Assets/background_music.mp3")
+	music_player.stream = music_stream
+	music_stream.loop = true
+	music_player.autoplay = true
+	add_child(music_player)
+
 
 func _input(event):
 	if event is InputEventMouseButton and event.pressed:
