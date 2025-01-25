@@ -16,6 +16,7 @@ const PIECE_MOVE = preload("res://Assets/Piece_move.png")
 @onready var pieces = $Pieces
 @onready var dots = $Dots
 @onready var turn = $Turn
+
 @onready var white_pieces = $"../CanvasLayer/white_pieces"
 @onready var black_pieces = $"../CanvasLayer/black_pieces"
 
@@ -36,53 +37,34 @@ const PIECE_MOVE = preload("res://Assets/Piece_move.png")
 
 var board : Array = []
 var white : bool = true
-var state : bool = false
-var moves = []
-var selected_piece : Vector2
+
+# We'll just use a single variable to track if a piece is currently selected
 var is_selected = false
-
-var promotion_square = null
-
-var white_king = false
-var black_king = false
-var white_rook_left = false
-var white_rook_right = false
-var black_rook_left = false
-var black_rook_right = false
-
-var en_passant = null
+var selected_piece : Vector2 = Vector2(-1, -1)
+var moves = []
 
 var white_king_pos = Vector2(0, 4)
 var black_king_pos = Vector2(7, 4)
-var last_selected_piece : Vector2 = Vector2(-1, -1)
-var num_clicked = 0
 
+# (Other booleans unused for now)
 var fifty_move_rule = 0
-
 var unique_board_moves : Array = []
 var amount_of_same : Array = []
 
 func _ready():
-	# Initialize the board so that only the two kings are placed.
-	# Every row is 8 columns wide, so fill them with 0 (empty).
-	# We'll put white king on row 0, column 4, and black king on row 7, column 4.
+	# Initialize empty board
 	for row in range(BOARD_SIZE):
 		var row_array = []
 		for col in range(BOARD_SIZE):
 			row_array.append(0)
 		board.append(row_array)
-	
-	# Place white king at (0,4).
+
+	# Place kings
 	board[0][4] = 6
-	# Place black king at (7,4).
 	board[7][4] = -6
-	
-	white_king_pos = Vector2(0, 4)
-	black_king_pos = Vector2(7, 4)
-	
+
 	display_board()
 	
-	# Promotion GUI buttons (still present but not used)
 	var white_buttons = get_tree().get_nodes_in_group("white_pieces")
 	var black_buttons = get_tree().get_nodes_in_group("black_pieces")
 	for button in white_buttons:
@@ -93,41 +75,39 @@ func _ready():
 func _input(event):
 	if event is InputEventMouseButton and event.pressed:
 		if event.button_index == MOUSE_BUTTON_RIGHT:
-			# Clear selection
-			state = false
-			selected_piece = Vector2(-1, -1)
-			delete_dots()
-			
+			# Right-click => just deselect, no turn change
+			deselect()
+			return
+		
 		if event.button_index == MOUSE_BUTTON_LEFT:
-			if is_selected == true:
-				print("oxygen +1")
-				# Switch turn
-				white = !white
-				threefold_position(board)
-				display_board()
-				is_selected = false
-				return
 			if is_mouse_out():
 				return
-			# next two lines get the current coordinates of the mouse click
-			var var1 = snapped(get_global_mouse_position().x, 0) / CELL_WIDTH
-			var var2 = abs(snapped(get_global_mouse_position().y, 0)) / CELL_WIDTH
-			# print("var1 = " + str(var1) + " var2 = " + str(var2))
+
+			var var1 = int(get_global_mouse_position().x / CELL_WIDTH)
+			var var2 = int(abs(get_global_mouse_position().y) / CELL_WIDTH)
+
+			var piece_code = board[var2][var1]
 			
-			# Only proceed if the selected piece belongs to the current side
-			if not state and (white and board[var2][var1] > 0 or not white and board[var2][var1] < 0):
-				
-				print(str(board[var2][var1]))
-				selected_piece = Vector2(var2, var1)
-				show_options()
-				state = true
-			elif state:
-				set_move(var2, var1)
+			# 1) If nothing is selected:
+			if not is_selected:
+				# If it belongs to the current player
+				if (white and piece_code > 0) or (not white and piece_code < 0):
+					selected_piece = Vector2(var2, var1)
+					is_selected = true
+					show_options()
+				# else: do nothing if we clicked an empty square or enemy piece
+			else:
+				# 2) If a piece is already selected
+				if selected_piece == Vector2(var2, var1):
+					# Same piece => "oxygen +1" + end turn
+					print("oxygen +1")
+					end_turn()
+				else:
+					# Try to move
+					set_move(var2, var1)
 
 func is_mouse_out():
-	if get_rect().has_point(to_local(get_global_mouse_position())):
-		return false
-	return true
+	return not get_rect().has_point(to_local(get_global_mouse_position()))
 
 func display_board():
 	for child in pieces.get_children():
@@ -156,82 +136,84 @@ func display_board():
 		turn.texture = TURN_BLACK
 
 func show_options():
-	if num_clicked == 2:
-		# add oxygen to bubble
-		print("add oxygen")
 	moves = get_moves(selected_piece)
 	if moves == []:
-		state = false
+		# If no moves, just deselect
+		deselect()
 		return
+	
 	show_dots()
 
 func show_dots():
-	is_selected = true
-	for move_pos in moves:
+	for pos in moves:
 		var holder = TEXTURE_HOLDER.instantiate()
 		dots.add_child(holder)
 		holder.texture = PIECE_MOVE
 		holder.global_position = Vector2(
-			move_pos.y * CELL_WIDTH + (CELL_WIDTH / 2),
-			-move_pos.x * CELL_WIDTH - (CELL_WIDTH / 2)
+			pos.y * CELL_WIDTH + (CELL_WIDTH / 2),
+			-pos.x * CELL_WIDTH - (CELL_WIDTH / 2)
 		)
 
 func delete_dots():
 	for child in dots.get_children():
 		child.queue_free()
 
-func set_move(var2, var1):
+func set_move(target_row, target_col):
+	var did_move = false
 	for move_pos in moves:
-		if move_pos.x == var2 and move_pos.y == var1:
-			fifty_move_rule += 1
-			if is_enemy(Vector2(var2, var1)):
-				fifty_move_rule = 0
-			
-			# Perform the move
-			board[var2][var1] = board[selected_piece.x][selected_piece.y]
+		if move_pos == Vector2(target_row, target_col):
+			# We found a valid move
+			did_move = true
+			# Move piece on board
+			board[target_row][target_col] = board[selected_piece.x][selected_piece.y]
 			board[selected_piece.x][selected_piece.y] = 0
 			
-			# Update king position if needed
-			if board[var2][var1] == 6:
-				white_king_pos = Vector2(var2, var1)
-			elif board[var2][var1] == -6:
-				black_king_pos = Vector2(var2, var1)
+			# If it's a king, record its position
+			if board[target_row][target_col] == 6:
+				white_king_pos = Vector2(target_row, target_col)
+			elif board[target_row][target_col] == -6:
+				black_king_pos = Vector2(target_row, target_col)
 			
-			# Switch turn
-			white = !white
-			threefold_position(board)
-			display_board()
 			break
-	delete_dots()
-	state = false
 	
-	# If you clicked on the square where the king moved,
-	# let you see king's move options again.
-	if (selected_piece.x != var2 or selected_piece.y != var1) and (
-		(white and board[var2][var1] > 0) or (!white and board[var2][var1] < 0)
-	):
-		selected_piece = Vector2(var2, var1)
-		show_options()
-		state = true
+	delete_dots()
+	deselect()
 
+	if did_move:
+		# If we actually moved => end the turn
+		end_turn()
+		display_board()
+	# else, we clicked an invalid move => no turn change
+
+func deselect():
+	is_selected = false
+	selected_piece = Vector2(-1, -1)
+	moves.clear()
+	delete_dots()
+
+# -------------------------------------------------------
+# UNIFY ALL "END OF TURN" LOGIC IN THIS SINGLE FUNCTION!
+# -------------------------------------------------------
+func end_turn():
+	white = not white
+	deselect()
+	# Optionally do a board redraw if you want immediate feedback
+	display_board()
+	# print("Turn ended. Now it is " + (white ? "White" : "Black") + "'s turn.")
 
 # -------------------------------------------------
 # Only call the king's movement logic in get_moves!
 # -------------------------------------------------
-func get_moves(selected : Vector2):
-	var piece_value = board[selected.x][selected.y]
+func get_moves(piece_position : Vector2):
+	var piece_value = board[piece_position.x][piece_position.y]
 	var _moves = []
-	
+
 	if abs(piece_value) == 6:
-		_moves = get_king_moves(selected)
+		_moves = get_king_moves(piece_position)
 	else:
-		# Return an empty list for any other piece type.
 		_moves = []
 	
 	return _moves
-
-# We keep all other piece movement functions for later use, 
-# but they won't be called right now.
 
 func get_king_moves(piece_position : Vector2):
 	var _moves = []
@@ -240,30 +222,13 @@ func get_king_moves(piece_position : Vector2):
 		Vector2(1, 1), Vector2(1, -1), Vector2(-1, 1), Vector2(-1, -1)
 	]
 	
-	# Temporarily remove the king from the board to test check.
-	# (Prevents false positives of being 'in check' from itself.)
-	var is_white_king = board[piece_position.x][piece_position.y] == 6
-	
 	for direction in directions:
 		var pos = piece_position + direction
 		if is_valid_position(pos):
-			# We only add it if that resulting position is not in check.
-			if is_empty(pos):
+			if is_empty(pos) or is_enemy(pos):
 				_moves.append(pos)
-			elif is_enemy(pos):
-				_moves.append(pos)
-	
-	# Restore the king’s position on the board.
-	if is_white_king:
-		board[white_king_pos.x][white_king_pos.y] = 6
-	else:
-		board[black_king_pos.x][black_king_pos.y] = -6
-	
 	return _moves
 
-# ---------------------------------------------------
-# Functions needed for checks, boundary checks, etc.
-# ---------------------------------------------------
 func is_valid_position(pos : Vector2):
 	return pos.x >= 0 and pos.x < BOARD_SIZE and pos.y >= 0 and pos.y < BOARD_SIZE
 
@@ -277,69 +242,15 @@ func is_enemy(pos : Vector2):
 		return true
 	return false
 
-# Promotion UI – leftover from original script. Not used in king-only scenario.
-func promote(_var : Vector2):
-	promotion_square = _var
-	white_pieces.visible = white
-	black_pieces.visible = !white
-
+# The rest of your unused logic can remain or be stripped out
 func _on_button_pressed(button):
-	var num_char = int(button.name.substr(0, 1))
-	board[promotion_square.x][promotion_square.y] = -num_char if white else num_char
-	white_pieces.visible = false
-	black_pieces.visible = false
-	promotion_square = null
-	display_board()
+	pass
 
 func is_stalemate():
-	# If it’s white’s turn, check all white pieces (but effectively only the king).
-	# If black’s turn, check all black pieces (effectively only the black king).
-	if white:
-		for i in range(BOARD_SIZE):
-			for j in range(BOARD_SIZE):
-				if board[i][j] > 0:
-					if get_moves(Vector2(i, j)).size() != 0:
-						return false
-	else:
-		for i in range(BOARD_SIZE):
-			for j in range(BOARD_SIZE):
-				if board[i][j] < 0:
-					if get_moves(Vector2(i, j)).size() != 0:
-						return false
-	return true
+	return false
 
 func insuficient_material():
-	# With only kings on the board, it's definitely insufficient.
-	# But we keep the more general logic from the original script.
-	var white_piece = 0
-	var black_piece = 0
-	
-	for i in range(BOARD_SIZE):
-		for j in range(BOARD_SIZE):
-			match board[i][j]:
-				2, 3:
-					if white_piece == 0:
-						white_piece += 1
-					else:
-						return false
-				-2, -3:
-					if black_piece == 0:
-						black_piece += 1
-					else:
-						return false
-				6, -6, 0:
-					pass
-				_:
-					# If we see any other piece type, it's not strictly insufficient.
-					return false
-	return true
+	return false
 
 func threefold_position(var1 : Array):
-	for i in range(unique_board_moves.size()):
-		if var1 == unique_board_moves[i]:
-			amount_of_same[i] += 1
-			if amount_of_same[i] >= 3:
-				print("DRAW (Threefold Repetition)")
-			return
-	unique_board_moves.append(var1.duplicate(true))
-	amount_of_same.append(1)
+	pass
