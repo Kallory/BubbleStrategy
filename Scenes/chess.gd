@@ -12,6 +12,7 @@ const TURN_WHITE = preload("res://Assets/turn-white.png")
 const TURN_BLACK = preload("res://Assets/turn-black.png")
 
 const PIECE_MOVE = preload("res://Assets/Piece_move.png")
+const BUBBLE_MOVE_SOUND = preload("res://Assets/Bubble Move.wav")
 
 @onready var pieces = $Pieces
 @onready var dots = $Dots
@@ -45,11 +46,10 @@ var moves = []
 
 var white_king_pos = Vector2(0, 4)
 var black_king_pos = Vector2(7, 4)
+var white_base = Vector2(0, 7)
+var black_base = Vector2(7, 0)
 
-# (Other booleans unused for now)
-var fifty_move_rule = 0
-var unique_board_moves : Array = []
-var amount_of_same : Array = []
+var bubble_move_player: AudioStreamPlayer
 
 func _ready():
 	# Initialize empty board
@@ -62,7 +62,7 @@ func _ready():
 	# Place kings
 	board[0][4] = 6
 	board[7][4] = -6
-
+	
 	display_board()
 	
 	var white_buttons = get_tree().get_nodes_in_group("white_pieces")
@@ -76,8 +76,12 @@ func _ready():
 	var music_stream = preload("res://Assets/background_music.mp3")
 	music_player.stream = music_stream
 	music_stream.loop = true
-	music_player.autoplay = true
+	#music_player.autoplay = true
 	add_child(music_player)
+	
+	bubble_move_player = AudioStreamPlayer.new()
+	bubble_move_player.stream = BUBBLE_MOVE_SOUND  # BUBBLE_MOVE_SOUND = preload("res://Assets/Bubble Move.wav")
+	add_child(bubble_move_player)
 
 
 func _input(event):
@@ -95,6 +99,7 @@ func _input(event):
 			var var2 = int(abs(get_global_mouse_position().y) / CELL_WIDTH)
 
 			var piece_code = board[var2][var1]
+			print(str(var2) + ", " + str(var1))
 			
 			# 1) If nothing is selected:
 			if not is_selected:
@@ -182,6 +187,7 @@ func set_move(target_row, target_col):
 			elif board[target_row][target_col] == -6:
 				black_king_pos = Vector2(target_row, target_col)
 			
+			bubble_move_player.play()
 			break
 	
 	delete_dots()
