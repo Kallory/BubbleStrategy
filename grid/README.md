@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Grid Display
 
 This Add-On creates a new Node based on Node2D called Grid Display.
@@ -13,3 +14,7 @@ You can set the line width for both vertical and horizontal lines.
 You can set the cell size for both Width and Height of the cell.
 
 You can set the color for both the horizontal and vertical lines.
+=======
+# BubbleStrategy
+Global Game Jam 2025 
+>>>>>>> d0edad125e36d0bce0fa49b934627b257dc9abef
