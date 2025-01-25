@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://ctsgdmugmedg5"
-path="res://.godot/imported/white_knight.png-a1797416f1c2c3425763c956be266713.ctex"
+uid="uid://bmmt31nb526bf"
+path="res://.godot/imported/player2_bubble_3.png-710d7b0a466567a8189566bb836498d9.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Assets/white_knight.png"
-dest_files=["res://.godot/imported/white_knight.png-a1797416f1c2c3425763c956be266713.ctex"]
+source_file="res://Assets/player2_bubble_3.png"
+dest_files=["res://.godot/imported/player2_bubble_3.png-710d7b0a466567a8189566bb836498d9.ctex"]
 
 [params]
 

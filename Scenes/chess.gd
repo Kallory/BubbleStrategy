@@ -6,7 +6,14 @@ const CELL_WIDTH = 18
 const TEXTURE_HOLDER = preload("res://Scenes/texture_holder.tscn")
 
 const PLAYER2_BUBBLE = preload("res://Assets/player2_bubble.png")
+const PLAYER2_BUBBLE_LVL2 = preload("res://Assets/player2_bubble_2.png")
+const PLAYER2_BUBBLE_LVL3 = preload("res://Assets/player2_bubble_3.png")
+const PLAYER2_BUBBLE_LVL4 = preload("res://Assets/player2_bubble_4.png")
+
 const PLAYER1_BUBBLE = preload("res://Assets/player1_bubble.png")
+const PLAYER1_BUBBLE_LVL2 = preload("res://Assets/player1_bubble_2.png")
+const PLAYER1_BUBBLE_LVL3 = preload("res://Assets/player1_bubble_3.png")
+const PLAYER1_BUBBLE_LVL4 = preload("res://Assets/player1_bubble_4.png")
 
 const TURN_PLAYER1 = preload("res://Assets/turn-player1.png")
 const TURN_PLAYER2 = preload("res://Assets/turn-player2.png")
@@ -22,19 +29,14 @@ const BUBBLE_MOVE_SOUND = preload("res://Assets/Bubble Move.wav")
 @onready var player2_pieces = $"../CanvasLayer/player2_pieces"
 
 # Piece codes:
-# -6 = player2 bubble
-# -5 = player2 queen
-# -4 = player2 rook
-# -3 = player2 bishop
-# -2 = player2 knight
-# -1 = player2 pawn
+# -1 = player2 bubble lvl 1
+# -2 = player2 bubble lvl 2
+
+
 #  0 = empty
-#  6 = player1 bubble
-#  5 = player1 queen
-#  4 = player1 rook
-#  3 = player1 bishop
-#  2 = player1 knight
-#  1 = player1 pawn
+#  1 = player1 bubble lvl 1
+#  2 = player2 bubble lvl 2
+
 
 var board : Array = []
 var player1 : bool = true
@@ -60,8 +62,8 @@ func _ready():
 		board.append(row_array)
 
 	# Place bases, initial bubble
-	board[0][8] = 6
-	board[8][0] = -6
+	board[0][8] = 1
+	board[8][0] = -1
 	
 	display_board()
 	
@@ -113,11 +115,44 @@ func _input(event):
 				# 2) If a piece is already selected
 				if selected_piece == Vector2(var2, var1) and (selected_piece == player1_base or selected_piece == player2_base):
 					# Same piece => "oxygen +1" + end turn
-					print("oxygen +1")
+					promote_bubble(selected_piece)
 					end_turn()
 				else:
 					# Try to move
 					set_move(var2, var1)
+
+func promote_bubble(pos: Vector2):
+	var code = board[pos.x][pos.y]
+	
+	if code == 1:
+		# Player 1 bubble goes from lvl 1 (1) -> lvl 2 (2)
+		board[pos.x][pos.y] = 2
+		print("Promoted Player 1 bubble to level 2!")
+	elif code == -1:
+		# Player 2 bubble goes from lvl 1 (-1) -> lvl 2 (-2)
+		board[pos.x][pos.y] = -2
+		print("Promoted Player 2 bubble to level 2!")
+	elif code == 2:
+		# Player 1 bubble goes from lvl 2 -> lvl 3
+		board[pos.x][pos.y] = 3
+		print("Bubble promoted 2 -> 3")
+	elif code == -2:
+		# Player 2 bubble goes from lvl 2 -> lvl 3
+		board[pos.x][pos.y] = -3
+		print("Bubble promoted 2 -> 3")
+	elif code == 3:
+		# Player 1 bubble goes from lvl 3 -> lvl 4
+		board[pos.x][pos.y] = 4
+		print("Bubble promoted 3 -> 4")
+	elif code == -3:
+		# Player 2 bubble goes from lvl 3 -> lvl 4
+		board[pos.x][pos.y] = -4
+		print("Bubble promoted 3 -> 4")
+	else:
+		# If it's not a level 1 bubble, do nothing or handle differently
+		print("No promotion possible.")
+	
+	display_board()
 
 func is_mouse_out():
 	return not get_rect().has_point(to_local(get_global_mouse_position()))
@@ -134,12 +169,25 @@ func display_board():
 				j * CELL_WIDTH + (CELL_WIDTH / 2),
 				-i * CELL_WIDTH - (CELL_WIDTH / 2)
 			)
-			
+				
+			# UPDATE TO ADD MORE LEVELS TO BUBBLES
 			match board[i][j]:
-				-6:
+				-1:
 					holder.texture = PLAYER2_BUBBLE
-				6:
+				-2:
+					holder.texture = PLAYER2_BUBBLE_LVL2
+				-3:
+					holder.texture = PLAYER2_BUBBLE_LVL3
+				-4:
+					holder.texture = PLAYER2_BUBBLE_LVL4
+				1:
 					holder.texture = PLAYER1_BUBBLE
+				2:
+					holder.texture = PLAYER1_BUBBLE_LVL2
+				3:
+					holder.texture = PLAYER1_BUBBLE_LVL3
+				4:
+					holder.texture = PLAYER1_BUBBLE_LVL4
 				_:
 					holder.texture = null
 	
@@ -182,9 +230,9 @@ func set_move(target_row, target_col):
 			board[selected_piece.x][selected_piece.y] = 0
 			
 			# If it's a bubble, record its position
-			if board[target_row][target_col] == 6:
+			if board[target_row][target_col] == 1:
 				player1_base_pos = Vector2(target_row, target_col)
-			elif board[target_row][target_col] == -6:
+			elif board[target_row][target_col] == -1:
 				player2_bubble_pos = Vector2(target_row, target_col)
 			
 			bubble_move_player.play()
@@ -222,7 +270,7 @@ func get_moves(piece_position : Vector2):
 	var piece_value = board[piece_position.x][piece_position.y]
 	var _moves = []
 
-	if abs(piece_value) == 6:
+	if abs(piece_value) > 0:
 		_moves = get_bubble_moves(piece_position)
 	else:
 		_moves = []
@@ -258,13 +306,4 @@ func is_enemy(pos : Vector2):
 
 # The rest of your unused logic can remain or be stripped out
 func _on_button_pressed(button):
-	pass
-
-func is_stalemate():
-	return false
-
-func insuficient_material():
-	return false
-
-func threefold_position(var1 : Array):
 	pass

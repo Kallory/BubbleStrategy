@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://oqqp46qtmwfu"
-path="res://.godot/imported/white_queen.png-fad857e9b546f8402de4306cc3dd8547.ctex"
+path="res://.godot/imported/player1_bubble_4.png-a163ae9ebd8b91557546a5bb90fdffc7.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Assets/white_queen.png"
-dest_files=["res://.godot/imported/white_queen.png-fad857e9b546f8402de4306cc3dd8547.ctex"]
+source_file="res://Assets/player1_bubble_4.png"
+dest_files=["res://.godot/imported/player1_bubble_4.png-a163ae9ebd8b91557546a5bb90fdffc7.ctex"]
 
 [params]
 

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bftid8e6hwnna"
-path="res://.godot/imported/black_knight.png-1777ce386ef549205b1d41d66719275d.ctex"
+uid="uid://bs6nmydq4udho"
+path="res://.godot/imported/player2_bubble_4.png-d79bb6777f25f0ecb46d253c19c582fa.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Assets/black_knight.png"
-dest_files=["res://.godot/imported/black_knight.png-1777ce386ef549205b1d41d66719275d.ctex"]
+source_file="res://Assets/player2_bubble_4.png"
+dest_files=["res://.godot/imported/player2_bubble_4.png-d79bb6777f25f0ecb46d253c19c582fa.ctex"]
 
 [params]
 
