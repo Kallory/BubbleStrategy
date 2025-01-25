@@ -1,7 +1,7 @@
 extends Sprite2D
 
 const BOARD_SIZE = 9
-const CELL_WIDTH = 18
+const CELL_WIDTH = 19
 
 const TEXTURE_HOLDER = preload("res://Scenes/texture_holder.tscn")
 
@@ -20,6 +20,8 @@ const TURN_PLAYER2 = preload("res://Assets/turn-player2.png")
 
 const PIECE_MOVE = preload("res://Assets/Piece_move.png")
 const BUBBLE_MOVE_SOUND = preload("res://Assets/Bubble Move.wav")
+const BUBBLE_CREATE_SOUND = preload("res://Assets/Bubble Appear Fill.wav")
+const BUBBLE_PROMOTE_SOUND = preload("res://Assets/Bubble Rank Up.wav")
 
 @onready var pieces = $Pieces
 @onready var dots = $Dots
@@ -55,6 +57,8 @@ var player1_base = Vector2(0, 8)
 var player2_base = Vector2(8, 0)
 
 var bubble_move_player: AudioStreamPlayer
+var bubble_create_sound: AudioStreamPlayer
+var bubble_promote_sound: AudioStreamPlayer
 
 func _ready():
 	# Initialize empty board
@@ -87,6 +91,14 @@ func _ready():
 	bubble_move_player = AudioStreamPlayer.new()
 	bubble_move_player.stream = BUBBLE_MOVE_SOUND  # BUBBLE_MOVE_SOUND = preload("res://Assets/Bubble Move.wav")
 	add_child(bubble_move_player)
+	
+	bubble_create_sound = AudioStreamPlayer.new()
+	bubble_create_sound.stream = BUBBLE_CREATE_SOUND
+	add_child(bubble_create_sound)
+	
+	bubble_promote_sound = AudioStreamPlayer.new()
+	bubble_promote_sound.stream = BUBBLE_PROMOTE_SOUND
+	add_child(bubble_promote_sound)
 
 
 func _input(event):
@@ -108,6 +120,20 @@ func _input(event):
 			
 			# 1) If nothing is selected:
 			if not is_selected:
+				if player1 and Vector2(var2, var1) == player1_base and board[var2][var1] == 0:
+					board[var2][var1] = 1 
+					print("New Player1 bubble created at base!")
+					bubble_create_sound.play()
+					end_turn()
+					return  
+				
+				if not player1 and Vector2(var2, var1) == player2_base and board[var2][var1] == 0:
+					board[var2][var1] = -1
+					print("New player2 bubble created at base")
+					bubble_create_sound.play()
+					end_turn()
+					return
+				
 				# If it belongs to the current player
 				if (player1 and piece_code > 0) or (not player1 and piece_code < 0):
 					selected_piece = Vector2(var2, var1)
@@ -131,26 +157,32 @@ func promote_bubble(pos: Vector2):
 		# Player 1 bubble goes from lvl 1 (1) -> lvl 2 (2)
 		board[pos.x][pos.y] = 2
 		print("Promoted Player 1 bubble to level 2!")
+		bubble_promote_sound.play()
 	elif code == -1:
 		# Player 2 bubble goes from lvl 1 (-1) -> lvl 2 (-2)
 		board[pos.x][pos.y] = -2
 		print("Promoted Player 2 bubble to level 2!")
+		bubble_promote_sound.play()
 	elif code == 2:
 		# Player 1 bubble goes from lvl 2 -> lvl 3
 		board[pos.x][pos.y] = 3
 		print("Bubble promoted 2 -> 3")
+		bubble_promote_sound.play()
 	elif code == -2:
 		# Player 2 bubble goes from lvl 2 -> lvl 3
 		board[pos.x][pos.y] = -3
 		print("Bubble promoted 2 -> 3")
+		bubble_promote_sound.play()
 	elif code == 3:
 		# Player 1 bubble goes from lvl 3 -> lvl 4
 		board[pos.x][pos.y] = 4
 		print("Bubble promoted 3 -> 4")
+		bubble_promote_sound.play()
 	elif code == -3:
 		# Player 2 bubble goes from lvl 3 -> lvl 4
 		board[pos.x][pos.y] = -4
 		print("Bubble promoted 3 -> 4")
+		bubble_promote_sound.play()
 	else:
 		# If it's not a level 1 bubble, do nothing or handle differently
 		print("No promotion possible.")
@@ -225,8 +257,9 @@ func delete_dots():
 func set_move(target_row, target_col):
 	var did_move = false
 	for move_pos in moves:
-		if move_pos == Vector2(target_row, target_col):
-			# We found a valid move
+		# case 1, no enemy, no friend
+		if move_pos == Vector2(target_row, target_col) and not is_enemy(move_pos):
+			# We found a valid move, no enemy
 			did_move = true
 			# Move piece on board
 			board[target_row][target_col] = board[selected_piece.x][selected_piece.y]
@@ -240,6 +273,12 @@ func set_move(target_row, target_col):
 			
 			bubble_move_player.play()
 			break
+		# case 2, enemy is occupied, combat
+		elif move_pos == Vector2(target_row, target_col) and is_enemy(move_pos):
+			handle_combat()
+		# case 3, friend is in occupied position, merge
+		elif move_pos == Vector2(target_row, target_col) and is_friend(move_pos):
+			handle_merge()
 	
 	delete_dots()
 	deselect()
@@ -249,6 +288,18 @@ func set_move(target_row, target_col):
 		end_turn()
 		display_board()
 	# else, we clicked an invalid move => no turn change
+
+func handle_combat():
+	# 1 get our piece_code at the selected pos
+	# 2 get enemy piece_code at the select pos
+	# 3 do math
+	# 4 bigger piece wins, subtracting loser's piece_code from it
+	# so set_move will do board[target_row][target_col] = result
+	
+	print("FIGHT!")
+
+func handle_merge():
+	print("MERGE!")
 
 func deselect():
 	is_selected = false
@@ -290,7 +341,7 @@ func get_bubble_moves(piece_position : Vector2):
 	for direction in directions:
 		var pos = piece_position + direction
 		if is_valid_position(pos):
-			if is_empty(pos) or is_enemy(pos):
+			if is_empty(pos) or is_enemy(pos) or is_friend(pos):
 				_moves.append(pos)
 	return _moves
 
@@ -304,6 +355,13 @@ func is_enemy(pos : Vector2):
 	if player1 and board[pos.x][pos.y] < 0:
 		return true
 	elif not player1 and board[pos.x][pos.y] > 0:
+		return true
+	return false
+
+func is_friend(pos : Vector2):
+	if player1 and board[pos.x][pos.y] > 0:
+		return true
+	elif not player1 and board[pos.x][pos.y] < 0:
 		return true
 	return false
 

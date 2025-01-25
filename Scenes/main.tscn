@@ -95,7 +95,7 @@ zoom = Vector2(4, 4)
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 
-[node name="white_pieces" type="Control" parent="CanvasLayer"]
+[node name="player1_pieces" type="Control" parent="CanvasLayer"]
 visible = false
 layout_mode = 3
 anchors_preset = 8
@@ -110,7 +110,7 @@ offset_bottom = 50.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="2" type="Button" parent="CanvasLayer/white_pieces" groups=["white_pieces"]]
+[node name="2" type="Button" parent="CanvasLayer/player1_pieces" groups=["white_pieces"]]
 layout_mode = 0
 offset_right = 100.0
 offset_bottom = 100.0
@@ -120,7 +120,7 @@ theme_override_styles/hover = SubResource("StyleBoxTexture_djh8o")
 theme_override_styles/pressed = SubResource("StyleBoxTexture_xu268")
 theme_override_styles/normal = SubResource("StyleBoxTexture_kgqrv")
 
-[node name="3" type="Button" parent="CanvasLayer/white_pieces" groups=["white_pieces"]]
+[node name="3" type="Button" parent="CanvasLayer/player1_pieces" groups=["white_pieces"]]
 layout_mode = 0
 offset_left = 100.0
 offset_right = 200.0
@@ -131,7 +131,7 @@ theme_override_styles/hover = SubResource("StyleBoxTexture_r62nm")
 theme_override_styles/pressed = SubResource("StyleBoxTexture_dj85t")
 theme_override_styles/normal = SubResource("StyleBoxTexture_rn6hk")
 
-[node name="4" type="Button" parent="CanvasLayer/white_pieces" groups=["white_pieces"]]
+[node name="4" type="Button" parent="CanvasLayer/player1_pieces" groups=["white_pieces"]]
 layout_mode = 0
 offset_left = 200.0
 offset_right = 300.0
@@ -142,7 +142,7 @@ theme_override_styles/hover = SubResource("StyleBoxTexture_xahkn")
 theme_override_styles/pressed = SubResource("StyleBoxTexture_oeqcr")
 theme_override_styles/normal = SubResource("StyleBoxTexture_6730i")
 
-[node name="5" type="Button" parent="CanvasLayer/white_pieces" groups=["white_pieces"]]
+[node name="5" type="Button" parent="CanvasLayer/player1_pieces" groups=["white_pieces"]]
 layout_mode = 0
 offset_left = 300.0
 offset_right = 400.0
@@ -153,7 +153,7 @@ theme_override_styles/hover = SubResource("StyleBoxTexture_jh1bq")
 theme_override_styles/pressed = SubResource("StyleBoxTexture_mj4nn")
 theme_override_styles/normal = SubResource("StyleBoxTexture_fj2iu")
 
-[node name="black_pieces" type="Control" parent="CanvasLayer"]
+[node name="player2_pieces" type="Control" parent="CanvasLayer"]
 visible = false
 layout_mode = 3
 anchors_preset = 8
@@ -168,7 +168,7 @@ offset_bottom = 50.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="2" type="Button" parent="CanvasLayer/black_pieces" groups=["black_pieces"]]
+[node name="2" type="Button" parent="CanvasLayer/player2_pieces" groups=["black_pieces"]]
 layout_mode = 0
 offset_right = 100.0
 offset_bottom = 100.0
@@ -178,7 +178,7 @@ theme_override_styles/hover = SubResource("StyleBoxTexture_0e7vx")
 theme_override_styles/pressed = SubResource("StyleBoxTexture_krrsb")
 theme_override_styles/normal = SubResource("StyleBoxTexture_5lcsg")
 
-[node name="3" type="Button" parent="CanvasLayer/black_pieces" groups=["black_pieces"]]
+[node name="3" type="Button" parent="CanvasLayer/player2_pieces" groups=["black_pieces"]]
 layout_mode = 0
 offset_left = 100.0
 offset_right = 200.0
@@ -189,7 +189,7 @@ theme_override_styles/hover = SubResource("StyleBoxTexture_cgwqf")
 theme_override_styles/pressed = SubResource("StyleBoxTexture_lj782")
 theme_override_styles/normal = SubResource("StyleBoxTexture_cnoic")
 
-[node name="4" type="Button" parent="CanvasLayer/black_pieces" groups=["black_pieces"]]
+[node name="4" type="Button" parent="CanvasLayer/player2_pieces" groups=["black_pieces"]]
 layout_mode = 0
 offset_left = 200.0
 offset_right = 300.0
@@ -200,7 +200,7 @@ theme_override_styles/hover = SubResource("StyleBoxTexture_6mk8i")
 theme_override_styles/pressed = SubResource("StyleBoxTexture_cavm8")
 theme_override_styles/normal = SubResource("StyleBoxTexture_peht4")
 
-[node name="5" type="Button" parent="CanvasLayer/black_pieces" groups=["black_pieces"]]
+[node name="5" type="Button" parent="CanvasLayer/player2_pieces" groups=["black_pieces"]]
 layout_mode = 0
 offset_left = 300.0
 offset_right = 400.0
@@ -214,4 +214,6 @@ theme_override_styles/normal = SubResource("StyleBoxTexture_vgg4r")
 [node name="Board" parent="." instance=ExtResource("1_63gbl")]
 texture_filter = 1
 texture_repeat = 1
+position = Vector2(84.5, -83.5)
+scale = Vector2(1.17361, 1.15972)
 texture = ExtResource("10_rjbg7")
