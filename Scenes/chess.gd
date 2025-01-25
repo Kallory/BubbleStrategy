@@ -31,11 +31,14 @@ const BUBBLE_MOVE_SOUND = preload("res://Assets/Bubble Move.wav")
 # Piece codes:
 # -1 = player2 bubble lvl 1
 # -2 = player2 bubble lvl 2
-
+# -3 = player2 bubble lvl 3
+# -4 = player2 bubble lvl 4
 
 #  0 = empty
 #  1 = player1 bubble lvl 1
-#  2 = player2 bubble lvl 2
+#  2 = player1 bubble lvl 2
+#  3 = player1 bubble lvl 3
+#  4 = player1 bubble lvl 4
 
 
 var board : Array = []
@@ -113,7 +116,7 @@ func _input(event):
 				# else: do nothing if we clicked an empty square or enemy piece
 			else:
 				# 2) If a piece is already selected
-				if selected_piece == Vector2(var2, var1) and (selected_piece == player1_base or selected_piece == player2_base):
+				if selected_piece == Vector2(var2, var1) and (selected_piece == player1_base or selected_piece == player2_base) and abs(piece_code) < 4:
 					# Same piece => "oxygen +1" + end turn
 					promote_bubble(selected_piece)
 					end_turn()
