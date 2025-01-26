@@ -116,7 +116,8 @@ func _input(event):
 			var var2 = int(abs(get_global_mouse_position().y) / CELL_WIDTH)
 
 			var piece_code = board[var2][var1]
-			print(str(var2) + ", " + str(var1))
+			#print(str(var2) + ", " + str(var1))
+			print("Strength = " + str(piece_code))
 			
 			# 1) If nothing is selected:
 			if not is_selected:
@@ -275,7 +276,34 @@ func set_move(target_row, target_col):
 			break
 		# case 2, enemy is occupied, combat
 		elif move_pos == Vector2(target_row, target_col) and is_enemy(move_pos):
-			handle_combat()
+			# selected piece is current player's piece, move_pos is where the enemy is
+			var winner = handle_combat(selected_piece, move_pos)
+			# player1 attacks and wins
+			if player1 and winner > 0:
+				board[selected_piece.x][selected_piece.y] = winner
+				board[target_row][target_col] = board[selected_piece.x][selected_piece.y]
+				board[selected_piece.x][selected_piece.y] = 0
+			# player1 attacks and loses
+			elif player1 and winner < 0:
+				board[selected_piece.x][selected_piece.y] = 0
+				board[target_row][target_col] = winner
+			# player2 attacks and wins
+			elif not player1 and winner < 0:
+				board[selected_piece.x][selected_piece.y] = winner
+				board[target_row][target_col] = board[selected_piece.x][selected_piece.y]
+				board[selected_piece.x][selected_piece.y] = 0
+			# player2 attacks and loses
+			elif not player1 and winner > 0:
+				board[selected_piece.x][selected_piece.y] = 0
+				board[target_row][target_col] = winner
+			# pieces are equal
+			else:
+				board[selected_piece.x][selected_piece.y] = 0
+				board[target_row][target_col] = 0
+				
+			did_move = true
+			break
+			
 		# case 3, friend is in occupied position, merge
 		elif move_pos == Vector2(target_row, target_col) and is_friend(move_pos):
 			handle_merge()
@@ -289,14 +317,39 @@ func set_move(target_row, target_col):
 		display_board()
 	# else, we clicked an invalid move => no turn change
 
-func handle_combat():
+func handle_combat(attacker: Vector2, defender: Vector2):
+	print("FIGHT!")
 	# 1 get our piece_code at the selected pos
+	print("attacker at: " + str(board[attacker.x][attacker.y]))
+	var attacking_bubble_strength = abs(board[attacker.x][attacker.y])
 	# 2 get enemy piece_code at the select pos
+	print("defender at: " + str(board[defender.x][defender.y]))
+	var defending_bubble_strength = abs(board[defender.x][defender.y])
 	# 3 do math
+	var result
+	# case 1, attacker bigger than defender
+	if (attacking_bubble_strength > defending_bubble_strength):
+		result = attacking_bubble_strength - defending_bubble_strength
+		if (player1):
+			return board[attacker.x][attacker.y] - defending_bubble_strength
+		else:
+			return board[attacker.x][attacker.y] + defending_bubble_strength
+	# case 2, defender stronger
+	elif (attacking_bubble_strength < defending_bubble_strength):
+		result = defending_bubble_strength - attacking_bubble_strength
+		print("attacker less than defender, result = " + str(defending_bubble_strength) + " - " + str(attacking_bubble_strength) + " = " + str(result))
+		if (player1):
+			return board[defender.x][defender.y] + attacking_bubble_strength
+		else:
+			return board[defender.x][defender.y] - attacking_bubble_strength
+	# case 3, same strength
+	else:
+		result = 0
+		return result
+	
 	# 4 bigger piece wins, subtracting loser's piece_code from it
 	# so set_move will do board[target_row][target_col] = result
-	
-	print("FIGHT!")
+
 
 func handle_merge():
 	print("MERGE!")
