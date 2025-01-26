@@ -22,6 +22,9 @@ const PIECE_MOVE = preload("res://Assets/Piece_move.png")
 const BUBBLE_MOVE_SOUND = preload("res://Assets/Bubble Move.wav")
 const BUBBLE_CREATE_SOUND = preload("res://Assets/Bubble Appear Fill.wav")
 const BUBBLE_PROMOTE_SOUND = preload("res://Assets/Bubble Rank Up.wav")
+const BUBBLE_COMBAT_SOUND = preload("res://Assets/Bubble Combat V4.wav")
+const BUBBLE_DESTROYED_SOUND = preload("res://Assets/Bubble Burst.wav")
+const BUBBLE_MERGED_SOUND = preload("res://Assets/Bubble Merge.wav")
 
 @onready var pieces = $Pieces
 @onready var dots = $Dots
@@ -59,6 +62,9 @@ var player2_base = Vector2(8, 0)
 var bubble_move_player: AudioStreamPlayer
 var bubble_create_sound: AudioStreamPlayer
 var bubble_promote_sound: AudioStreamPlayer
+var bubble_combat_sound: AudioStreamPlayer
+var bubble_destroyed_sound: AudioStreamPlayer
+var bubble_merged_sound: AudioStreamPlayer
 
 func _ready():
 	# Initialize empty board
@@ -99,6 +105,18 @@ func _ready():
 	bubble_promote_sound = AudioStreamPlayer.new()
 	bubble_promote_sound.stream = BUBBLE_PROMOTE_SOUND
 	add_child(bubble_promote_sound)
+	
+	bubble_combat_sound = AudioStreamPlayer.new()
+	bubble_combat_sound.stream = BUBBLE_COMBAT_SOUND
+	add_child(bubble_combat_sound)
+	
+	bubble_destroyed_sound = AudioStreamPlayer.new()
+	bubble_destroyed_sound.stream = BUBBLE_DESTROYED_SOUND
+	add_child(bubble_destroyed_sound)
+	
+	bubble_merged_sound = AudioStreamPlayer.new()
+	bubble_merged_sound.stream = BUBBLE_MERGED_SOUND
+	add_child(bubble_merged_sound)
 
 
 func _input(event):
@@ -145,14 +163,16 @@ func _input(event):
 				# 2) If a piece is already selected
 				if selected_piece == Vector2(var2, var1) and (selected_piece == player1_base or selected_piece == player2_base) and abs(piece_code) < 4:
 					# Same piece => "oxygen +1" + end turn
-					promote_bubble(selected_piece)
-					end_turn()
+					var success = promote_bubble(selected_piece)
+					if success:
+						end_turn()
 				else:
 					# Try to move
 					set_move(var2, var1)
 
 func promote_bubble(pos: Vector2):
 	var code = board[pos.x][pos.y]
+	var done_something = true
 	
 	if code == 1:
 		# Player 1 bubble goes from lvl 1 (1) -> lvl 2 (2)
@@ -187,8 +207,10 @@ func promote_bubble(pos: Vector2):
 	else:
 		# If it's not a level 1 bubble, do nothing or handle differently
 		print("No promotion possible.")
+		done_something = false
 	
 	display_board()
+	return done_something
 
 func is_mouse_out():
 	return not get_rect().has_point(to_local(get_global_mouse_position()))
@@ -256,10 +278,11 @@ func delete_dots():
 		child.queue_free()
 
 func set_move(target_row, target_col):
+	
 	var did_move = false
 	for move_pos in moves:
 		# case 1, no enemy, no friend
-		if move_pos == Vector2(target_row, target_col) and not is_enemy(move_pos):
+		if move_pos == Vector2(target_row, target_col) and not is_enemy(move_pos) and not is_friend(move_pos):
 			# We found a valid move, no enemy
 			did_move = true
 			# Move piece on board
@@ -305,8 +328,12 @@ func set_move(target_row, target_col):
 			break
 			
 		# case 3, friend is in occupied position, merge
+		
 		elif move_pos == Vector2(target_row, target_col) and is_friend(move_pos):
-			handle_merge()
+			var success = handle_merge(selected_piece, move_pos)
+			if success:
+				did_move = true
+			break
 	
 	delete_dots()
 	deselect()
@@ -319,6 +346,8 @@ func set_move(target_row, target_col):
 
 func handle_combat(attacker: Vector2, defender: Vector2):
 	print("FIGHT!")
+	bubble_combat_sound.play()
+	bubble_destroyed_sound.play()
 	# 1 get our piece_code at the selected pos
 	print("attacker at: " + str(board[attacker.x][attacker.y]))
 	var attacking_bubble_strength = abs(board[attacker.x][attacker.y])
@@ -351,8 +380,23 @@ func handle_combat(attacker: Vector2, defender: Vector2):
 	# so set_move will do board[target_row][target_col] = result
 
 
-func handle_merge():
+func handle_merge(posA: Vector2, posB: Vector2) -> bool:
 	print("MERGE!")
+	bubble_merged_sound.play()
+	
+	var codeA = board[posA.x][posA.y]  # The moving bubble
+	var codeB = board[posB.x][posB.y]  # The bubble on the tile we're merging into
+
+	var new_level = abs(codeA) + abs(codeB)
+	if new_level > 4:
+		print("Cannot merge; resulting bubble would exceed level 4. Doing nothing.")
+		return false  # Merge not performed
+
+	var sign = signf(codeB)  # Keep the sign of the bubble at posB (the 'destination')
+	board[posB.x][posB.y] = int(new_level * sign)
+	board[posA.x][posA.y] = 0
+	print("Merge complete! Now tile", posB, "has code", board[posB.x][posB.y])
+	return true  # Merge succeeded
 
 func deselect():
 	is_selected = false
